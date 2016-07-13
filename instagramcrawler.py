@@ -16,6 +16,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.chrome.options import Options
 
 """
     Selenium related
@@ -66,16 +67,18 @@ class UnavailablePageException(Exception):
 class InstagramCrawler(object):
     def __init__(self,dir_prefix = './data/'):
 
-        self.driver = webdriver.Firefox()
+        options = webdriver.ChromeOptions() 
+        options.add_argument("user-data-dir=C:\Users\jack5\AppData\Local\Google\Chrome\User Data\Profile 1") #Path to your chrome profile
+        self.driver = webdriver.Chrome(executable_path="F:\Downloads\chromedriver_win32\chromedriver.exe", chrome_options=options)
         self.dir_prefix = ( dir_prefix + '/' if not dir_prefix.endswith('/') else dir_prefix )
         self.host = "http://www.instagram.com"
 
         # Download and Saving
         self.session = FuturesSession(max_workers=10)
 
-    def __del__(self):
-        if self.driver:
-            self.driver.close()
+    #def __del__(self):
+    #    if self.driver:
+    #        self.driver.close()
 
     def login(self):
         self.driver.get(urljoin(self.host,"accounts/login/"))
@@ -125,6 +128,8 @@ class InstagramCrawler(object):
 
         if self.crawl_type == "photos":
             self.photo_links = self._crawl_photo_links()
+            
+            print len(self.photo_links)
 
             assert len(self.photo_links) == self.number, \
                 "Numbers of data and target number do not match!"
@@ -150,14 +155,17 @@ class InstagramCrawler(object):
 
         if self.crawl_type == "photos":
             # Send async requests and cache in list
+
             image_responses = [ self.session.get(self.photo_links[idx]) \
                                 for idx in range(self.number) ]
 
+
             for idx in range(self.number):
+
                 resp = image_responses[idx].result()
 
-                img = str(idx) + '.jpg'
-                with open(target_dir + img,'w') as f:
+                img = self.target.lstrip('#') + " (" + str(idx+1) + ")" + '.jpg'
+                with open(target_dir + img,'wb') as f:
                     f.write(resp.content)
 
                 if self.captions:
@@ -201,17 +209,25 @@ class InstagramCrawler(object):
         self.driver.execute_script(SCROLL_DOWN)
 
         if self.number > 12:
+            time.sleep(3)
             loadmore = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, CSS_LOAD_MORE))
+               EC.presence_of_element_located((By.CSS_SELECTOR, CSS_LOAD_MORE))
             )
             loadmore.click()
+            time.sleep(2)
+            #self.driver.findElement_by_link_text("LOAD MORE").click();
+            #self.driver.find_element_by_class_name("_oidfu").click()
 
-            num_to_scroll = (self.number - 12)/12 + 1
+            num_to_scroll = ((self.number - 12)/12 + 1) + 30
             for _ in range(num_to_scroll):
-                self.driver.execute_script(SCROLL_DOWN)
-                time.sleep(0.05)
+                
                 self.driver.execute_script(SCROLL_UP)
-                time.sleep(0.05)
+                #self.driver.execute_script(SCROLL_DOWN)   
+                time.sleep(0.5) 
+                #self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight-50)")
+                self.driver.execute_script("window.scrollTo(0,Math.max(document.documentElement.scrollHeight," + "document.body.scrollHeight,document.documentElement.clientHeight));");
+                time.sleep(0.5)
+                #time.sleep(1)
 
         encased_photo_links = re.finditer(r'src="([https]+:...[\/\w \.-]*..[\/\w \.-]*'
                             r'..[\/\w \.-]*..[\/\w \.-].jpg)', self.driver.page_source)
@@ -224,6 +240,7 @@ class InstagramCrawler(object):
             begin = 1
             end = self.number + 1
 
+        print self.number
         return photo_links[begin:end]
 
     def _crawl_captions(self):
@@ -232,9 +249,9 @@ class InstagramCrawler(object):
         for post_num in range(self.number):
             if post_num == 0: # Click on the first post
                 # For Chrome
-                #self.driver.find_element_by_class_name('_ovg3g').click()
+                self.driver.find_element_by_class_name('_ovg3g').click()
                 # Firefox
-                self.driver.find_element_by_xpath("//a[contains(@class, '_8mlbc _vbtk2 _t5r8b')]").click()
+                #self.driver.find_element_by_xpath("//a[contains(@class, '_8mlbc _vbtk2 _t5r8b')]").click()
                 if self.number != 1: # If user has only one post
                     WebDriverWait(self.driver, 10).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR,CSS_RIGHT_ARROW))
