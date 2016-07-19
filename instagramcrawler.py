@@ -68,10 +68,10 @@ class InstagramCrawler(object):
     def __init__(self,dir_prefix = './data/'):
 
         options = webdriver.ChromeOptions() 
-        options.add_argument("user-data-dir=C:\Users\jack5\AppData\Local\Google\Chrome\User Data\Profile 1") #Path to your chrome profile
-        self.driver = webdriver.Chrome(executable_path="F:\Downloads\chromedriver_win32\chromedriver.exe", chrome_options=options)
+        #options.add_argument("user-data-dir=C:\Users\jack5\AppData\Local\Google\Chrome\User Data\Profile 1") #Path to your chrome profile
+        self.driver = webdriver.Chrome(executable_path="chromedriver.exe", chrome_options=options)
         self.dir_prefix = ( dir_prefix + '/' if not dir_prefix.endswith('/') else dir_prefix )
-        self.host = "http://www.instagram.com"
+        self.host = "https://www.instagram.com"
 
         # Download and Saving
         self.session = FuturesSession(max_workers=10)
@@ -223,10 +223,10 @@ class InstagramCrawler(object):
                 
                 self.driver.execute_script(SCROLL_UP)
                 #self.driver.execute_script(SCROLL_DOWN)   
-                time.sleep(0.5) 
+                time.sleep(2) 
                 #self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight-50)")
                 self.driver.execute_script("window.scrollTo(0,Math.max(document.documentElement.scrollHeight," + "document.body.scrollHeight,document.documentElement.clientHeight));");
-                time.sleep(0.5)
+                time.sleep(2)
                 #time.sleep(1)
 
         encased_photo_links = re.finditer(r'src="([https]+:...[\/\w \.-]*..[\/\w \.-]*'
